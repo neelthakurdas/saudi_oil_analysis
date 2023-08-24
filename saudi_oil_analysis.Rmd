@@ -1,0 +1,82 @@
+---
+title: "SaudiArabia"
+author: "Neel Thakurdas"
+date: "2023-04-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r load-packages}
+library(readr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r load-data, message=FALSE}
+term_paper_data <- read_csv("Downloads/term_paper_data - Sheet1 (1).csv")
+View(term_paper_data)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+term_paper_long <- term_paper_data %>%
+  pivot_longer(cols = c(`Oil_Prices`, `GDP`), names_to = "Category", values_to = "Count") %>%
+  select(Year, Category, Count) %>%
+  arrange(Year)
+
+term_paper_long$Count[term_paper_long$Category == "GDP"] <- term_paper_long$Count[term_paper_long$Category == "GDP"] / 1000000000
+
+ggplot(term_paper_long, aes(x = Year, y = Count, color = Category)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::number_format(scale = 1e-0), 
+                     sec.axis = sec_axis(~./1, labels = scales::comma, name = "Crude Oil Prices (in current US$ per cubic meter)")) +
+  scale_color_manual(values = c("#009534", "#4C4244")) +
+  ggtitle("Fig 1: Saudi Arabia GDP and Global Crude Oil Prices Over Time") +
+  xlab("Year") + ylab("GDP (in billions of current US$)") + theme_bw()
+
+correlation <- cor(term_paper_data$GDP, term_paper_data$Oil_Prices, method = "pearson")
+print(correlation)
+```
+```{r}
+term_paper_data %>%
+  ggplot(aes(x = Year, y = `Oil_Rents%GDP`)) + geom_col(fill = "#678d58") + theme_bw() + 
+  labs(y = "Oil Rents (as a % of GDP)", x = "Year", title = "Fig 2: Saudi Arabia Oil Rents (as a % of GDP) Over Time")
+```
+```{r}
+graphcolors = colorRampPalette(c("lightgreen", "darkgreen"))
+newcolors <- graphcolors(8)
+
+term_paper_long <- term_paper_data %>%
+  pivot_longer(cols = c(`GDP_Growth%`, `Oil_Prices_Growth%`), names_to = "Category", values_to = "Count") %>%
+  select(Year, Category, Count) %>%
+  arrange(Year)
+
+term_paper_long %>%
+  filter(Year >= 1980) %>%
+  ggplot(aes(x = Year)) + 
+  geom_point(aes(y = Count, color = Category)) + 
+  geom_line(aes(y = Count, color = Category)) + 
+  scale_color_manual(values = c("lightgreen", "darkgreen")) +
+  theme_bw() + 
+  labs(x = "Year", title = "Fig 3: Saudi Arabia GDP Growth (%) and Oil Prices Growth (%) Over Time") +
+  ylab("Oil Prices Growth (%)") +
+  scale_y_continuous(sec.axis = sec_axis(~./10, name = "GDP Growth (%)"))
+
+```
